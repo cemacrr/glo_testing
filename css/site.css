@@ -1,0 +1,69 @@
+/** flex classes: **/
+
+.row,
+.row_wrap,
+.column,
+.column_wrap {
+  display: flex;
+  flex: 1 1 auto;
+}
+
+.row {
+  flex-flow: row nowrap;
+}
+
+.row_wrap {
+  flex-flow: row wrap;
+}
+
+.column {
+  flex-flow: column nowrap;
+}
+
+.column_wrap {
+  flex-flow: column wrap;
+}
+
+.flex_center {
+  justify-content: center;
+}
+
+.flex_start {
+  justify-content: flex-start;
+}
+
+.flex_end {
+  justify-content: flex-end;
+}
+
+.flex_justify {
+  justify-content: space-around;
+}
+
+.flex_grow {
+  flex: 1 1 auto;
+}
+
+.flex_no_grow {
+  flex: 0 1 auto;
+}
+
+/** body: **/
+
+body {
+  background-color: #484848;
+  margin: 0;
+  padding: 0;
+}
+
+/** map: **/
+
+.map_container_col {
+  min-height: 100vh;
+  max-width: 1800px;
+  margin: auto;
+}
+
+.map_div {
+  margin: 2em;
+}
