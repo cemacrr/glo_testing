@@ -167,21 +167,21 @@ function draw_map() {
 
   /* add polygons ... thulagi 1990: */
   var thulagi_1990 = L.geoJSON(
-    map_data['thulagi_1990']['features'][0],
+    map_data['thulagi_1990'],
     {style: function () { return {color: '#6666cc'}; }}
   );
   thulagi_1990.bindTooltip('Thulagi 1990');
 //  thulagi_1990.addTo(map);
   /* ... thulagi 2000 ... : */
   var thulagi_2000 = L.geoJSON(
-    map_data['thulagi_2000']['features'][0],
+    map_data['thulagi_2000'],
     {style: function () { return {color: '#66cc66'}; }}
   );
   thulagi_2000.bindTooltip('Thulagi 2000');
 //  thulagi_2000.addTo(map);
   /* ... thulagi 2010: */
   var thulagi_2010 = L.geoJSON(
-    map_data['thulagi_2010']['features'][0],
+    map_data['thulagi_2010'],
     {style: function () { return {color: '#cc6666'}; }}
   );
   thulagi_2010.bindTooltip('Thulagi 2010');
