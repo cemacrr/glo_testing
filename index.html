@@ -11,14 +11,14 @@
           href="img/icon/icon.png"
           sizes="192x192">
     <!-- title: ___________________________________________________________ -->
-    <title>GLO Testing</title>
+    <title id="title_page" >GLO Testing</title>
     <!-- styles: __________________________________________________________ -->
     <!-- leaflet style: -->
     <link rel="stylesheet"
           type="text/css"
           href="css/leaflet.css"
           media="all">
-    <!-- site style: -->
+    <!-- local css: -->
     <link rel="stylesheet"
           type="text/css"
           href="css/site.css"
@@ -28,7 +28,11 @@
     <script src="js/leaflet.js"
             charset="utf-8">
     </script>
-    <!-- site js: -->
+    <!-- plotly js: -->
+    <script src="js/plotly.js"
+            charset="utf-8">
+    </script>
+    <!-- local js: -->
     <script src="js/site.js"
             charset="utf-8"
             defer>
@@ -37,16 +41,75 @@
   </head>
   <!-- body start: ________________________________________________________ -->
   <body>
-    <!-- map container: ___________________________________________________ -->
-    <div id="map_container_col"
-         class="map_container_col column">
-      <div id="map_container_row"
-           class="map_container_row row flex_center">
-        <!-- map div: _____________________________________________________ -->
-        <div id="map_div"
-             class="map_div flex_grow">
+    <!-- container: _______________________________________________________ -->
+    <div id="container_col"
+         class="container_col column">
+      <!-- header text: ___________________________________________________ -->
+      <div id="header_header_row"
+           class="container_row row flex_start">
+        <h2 id="header_lake_id"></h2>
+      </div>
+      <div id="header_text_row"
+           class="container_row row flex_start">
+        <div id="header_text"
+             class="page_text"></div>
+      </div>
+      <!-- geometry plot: ______________________________________________ -->
+      <div id="geometry_header_row"
+           class="container_row row flex_start">
+        <h3>Geometry</h3>
+      </div>
+      <div id="geometry_plot_row"
+           class="container_row row flex_center">
+        <div id="geometry_plot_div"
+             class="plot_div flex_grow">
         </div>
       </div>
+      <!-- temperature plot: ______________________________________________ -->
+      <div id="temperature_header_row"
+           class="container_row row flex_start">
+        <h3>Temperature</h3>
+      </div>
+      <div id="temperature_plot_row"
+           class="container_row row flex_center">
+        <div id="temperature_plot_div"
+             class="plot_div flex_grow">
+        </div>
+      </div>
+      <!-- area plot: ______________________________________________ -->
+      <div id="area_header_row"
+           class="container_row row flex_start">
+        <h3>Area</h3>
+      </div>
+      <div id="area_plot_row"
+           class="container_row row flex_center">
+        <div id="area_plot_div"
+             class="plot_div flex_grow">
+        </div>
+      </div>
+      <!-- volume plot: ______________________________________________ -->
+      <div id="volume_header_row"
+           class="container_row row flex_start">
+        <h3>Volume</h3>
+      </div>
+      <div id="volume_plot_row"
+           class="container_row row flex_center">
+        <div id="volume_plot_div"
+             class="plot_div flex_grow">
+        </div>
+      </div>
+      <!-- depth plot: ____________________________________________________ -->
+      <div id="depth_header_row"
+           class="container_row row flex_start">
+        <h3>Depth</h3>
+      </div>
+      <div id="depth_plot_row"
+           class="container_row row flex_center">
+        <div id="depth_plot_div"
+             class="plot_div flex_grow">
+        </div>
+      </div>
+    <!-- end container: ___________________________________________________ -->
     </div>
   <!-- body end: __________________________________________________________ -->
   </body>

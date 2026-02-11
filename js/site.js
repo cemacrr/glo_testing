@@ -1,12 +1,38 @@
+/*** site.css ***/
+
 'use strict';
 
 /** global variables: **/
 
-/* map div: */
-var map_div = document.getElementById('map_div');
-
-/* map data variable: */
-var map_data = null;
+var lake_id = 'GLO_84.485_28.48833';
+var lake_x = 84;
+var lake_y = 28;
+var data_lakes = 'data/lakes_by_id.json';
+var data_geometry = 'data/geometry/' + lake_x + '/' + lake_y + '/' +
+                    lake_id + '.json';
+var data_temperature = 'data/temperature/' + lake_x + '/' + lake_y + '/' +
+                       lake_id + '.json';
+var data_area = 'data/area/' + lake_x + '/' + lake_y + '/' +
+                lake_id + '.json';
+var data_volume = 'data/volume/' + lake_x + '/' + lake_y + '/' +
+                  lake_id + '.json';
+var data_depth = 'data/depth/' + lake_x + '/' + lake_y + '/' +
+                 lake_id + '.json';
+var page_data = {
+  /* lake data: */
+  'lake': null,
+  /* geometry data: */
+  'geometry': null,
+  /* temperature data: */
+  'temperature': null,
+  /* area data: */
+  'area': null,
+  /* volume data: */
+  'volume': null,
+  /* depth data: */
+  'depth': null
+};
+var plot_div = document.getElementById('plot_div');
 
 /** leaflet mouse position control: **/
 
@@ -64,54 +90,71 @@ L.control.mousePosition = function (options) {
 
 /** functions: **/
 
-/* function to load site data: */
-async function load_data() {
-  /* init map_data: */
-  map_data = {};
-
-  /* thulagi 1990: */
+/* function to load lake data: */
+async function load_lake_data() {
+  /* get data: */
   await fetch(
-    'data/thulagi/thulagi_1990.geojson',
+    data_lakes,
     {'cache': 'no-cache'}
   ).then(async function(data_req) {
-    map_data['thulagi_1990'] = await data_req.json();
-  }); 
-  /* thulagi 2000: */
-  await fetch(
-    'data/thulagi/thulagi_2000.geojson',
-    {'cache': 'no-cache'}
-  ).then(async function(data_req) {
-    map_data['thulagi_2000'] = await data_req.json();
-  }); 
-  /* thulagi 2010: */
-  await fetch(
-    'data/thulagi/thulagi_2010.geojson',
-    {'cache': 'no-cache'}
-  ).then(async function(data_req) {
-    map_data['thulagi_2010'] = await data_req.json();
-  }); 
-
-  /* now draw the map: */
-  draw_map();
-
+    var lakes_data = await data_req.json();
+    page_data['lake'] = lakes_data[lake_id];
+  });
+  /* load page text: */
+  load_text();
 };
 
-/* map drawing function: */
-function draw_map() {
+/* function to load bits of text on page: */
+function load_text() {
+  /* set title and header text: */
+  var title_el = document.getElementById('title_page');
+  title_el.innerHTML += ' - ' + lake_id;
+  var header_el = document.getElementById('header_lake_id');
+  header_el.innerHTML = lake_id;
+  /* add lake info text: */
+  var info_el = document.getElementById('header_text');
+  var info_text = '';
+  var info_keys = [
+    'GLO_ID', 'COUNTRY', 'BASIN', 'CONNECTIVITY', 'DATA_SOURCE', 'START_DATE',
+    'END_DATE', 'LONGITUDE', 'LATITUDE'
+  ]; 
+  for (var i = 0; i < info_keys.length; i++) {
+    var info_key = info_keys[i];
+    info_text += '<p>' + info_keys[i].toLowerCase() + ': ' + page_data['lake'][info_key] + '</p>';
+  };
+  info_el.innerHTML = info_text;
+};
 
+/* function to load geometry data: */
+async function load_geometry_data() {
+  /* get data: */
+  await fetch(
+    data_geometry,
+    {'cache': 'no-cache'}
+  ).then(async function(data_req) {
+    page_data['geometry'] = await data_req.json();
+  });
+  /* get data: */
+  var data = page_data['geometry'];
+  /* draw the geometry plot: */
+  geometry_plot(data);
+};
+
+/* function to draw geometry plot: */
+function geometry_plot(data) {
+  /* gep map element: */
+  var map_div = document.getElementById('geometry_plot_div');
   /* check if map exists: */
   if (map_div._leaflet_id != undefined) {
     /* return if map exists: */
     return;
   };
-
   /* define sentinel-2 layer: */
   var s2_layer = L.tileLayer(
     'https://tiles.maps.eox.at/wmts/1.0.0/s2cloudless-2023_3857/default/g/{z}/{y}/{x}.jpg', {
       'attribution': '<a href="https://s2maps.eu/" target="_blank">Sentinel-2 cloudless</a>'
     }
   );
-
   /* define cartodb layer: */
   var carto_layer = L.tileLayer(
     'https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}.png', {
@@ -119,21 +162,50 @@ function draw_map() {
       'subdomains': 'abcd'
     }
   );
-
   /* define openstreetmap layer: */
   var osm_layer = L.tileLayer(
     'https://{s}.tile.osm.org/{z}/{x}/{y}.png', {
       'attribution': '&copy; <a href="https://osm.org/copyright" target="_blank">OpenStreetMap</a> contributors'
     }
   );
-
+  /* define its_live glacial velocit layer: */
+  var gv_layer = L.tileLayer(
+    'https://its-live-data.s3-us-west-2.amazonaws.com/velocity_mosaic/v2/static/v_tiles_global/{z}/{x}/{y}.png', {
+      'attribution': 'ITS_LIVE'
+    }
+  );
   /* all tile layers: */
   var tile_layers = {
     'Sentinel-2': s2_layer,
     'Carto': carto_layer,
-    'Open Street Map': osm_layer
+    'Open Street Map': osm_layer,
+    'Glacial Velocity': gv_layer
   };
-
+  /* init polygon layers: */
+  var poly_layers = {};
+  /* init min / max lat / lon: */
+  var min_lat = 90;
+  var max_lat = -90;
+  var min_lon = 180;
+  var max_lon = -180;
+  /* loop through yars and load polygones: */
+  for (var i = 0; i < data['years'].length; i++) {
+    var poly_year = parseInt(data['years'][i]) + '.0';
+    var poly_layer = L.geoJSON(
+      data['data'][poly_year],
+      {style: function () { return {color: '#6666cc'}; }}
+    );
+    poly_layer.bindTooltip('' + parseInt(data['years'][i]) + '');
+    poly_layers[parseInt(data['years'][i])] = poly_layer;
+    var poly_bounds = poly_layer.getBounds();
+    min_lat = Math.min(min_lat, poly_bounds.getSouth())
+    max_lat = Math.max(max_lat, poly_bounds.getNorth())
+    min_lon = Math.min(min_lon, poly_bounds.getWest())
+    max_lon = Math.max(max_lon, poly_bounds.getEast())
+  };
+  /* center coords: */
+  var center_lat = (max_lat + min_lat) / 2;
+  var center_lon = (max_lon + min_lon) / 2;
   /* define map: */
   var map = L.map(map_div, {
     /* map layers: */
@@ -142,13 +214,13 @@ function draw_map() {
     ],
     /* map center: */
     center: [
-      28.49,
-      84.484
+      center_lat,
+      center_lon,
     ],
     /* define bounds: */
     maxBounds: [
-      [28, 29],
-      [84, 85],
+      [min_lat - 0.1, max_lat + 0.1],
+      [min_lon -0.1, max_lon + 0.1],
     ],
     maxBoundsViscosity: 1.0,
     /*  zoom levels: */
@@ -156,7 +228,6 @@ function draw_map() {
     minZoom: 12,
     maxZoom: 16
   });
-
   /* remove prefix from attribution control: */
   var map_atrr_control = map.attributionControl;
   map_atrr_control.setPrefix(false);
@@ -164,44 +235,269 @@ function draw_map() {
   L.control.mousePosition().addTo(map);
   /* add scale: */
   L.control.scale().addTo(map);
-
-  /* add polygons ... thulagi 1990: */
-  var thulagi_1990 = L.geoJSON(
-    map_data['thulagi_1990'],
-    {style: function () { return {color: '#6666cc'}; }}
-  );
-  thulagi_1990.bindTooltip('Thulagi 1990');
-//  thulagi_1990.addTo(map);
-  /* ... thulagi 2000 ... : */
-  var thulagi_2000 = L.geoJSON(
-    map_data['thulagi_2000'],
-    {style: function () { return {color: '#66cc66'}; }}
-  );
-  thulagi_2000.bindTooltip('Thulagi 2000');
-//  thulagi_2000.addTo(map);
-  /* ... thulagi 2010: */
-  var thulagi_2010 = L.geoJSON(
-    map_data['thulagi_2010'],
-    {style: function () { return {color: '#cc6666'}; }}
-  );
-  thulagi_2010.bindTooltip('Thulagi 2010');
-  thulagi_2010.addTo(map);
-
-  /* all polygon layers: */
-  var poly_layers = {
-    'Thulagi 1990': thulagi_1990,
-    'Thulagi 2000': thulagi_2000,
-    'Thulagi 2010': thulagi_2010
-  };
-
   /* add layer control: */
   L.control.layers(tile_layers, poly_layers, {collapsed: true}).addTo(map);
+};
 
+/* function to load temperature data: */
+async function load_temperature_data() {
+  /* get data: */
+  await fetch(
+    data_temperature,
+    {'cache': 'no-cache'}
+  ).then(async function(data_req) {
+    page_data['temperature'] = await data_req.json();
+  });
+  /* get data: */
+  var data = page_data['temperature'];
+  /* draw the temperature plot: */
+  temperature_plot(data);
+};
+
+/* function to draw temperature plot: */
+function temperature_plot(data) {
+  /* init scatter plot data: */
+  var scatter_data = [];
+  /* loop through data ids: */
+  var data_ids = data['data_ids'];
+  for (var i = 0; i < data_ids.length; i++) {
+    /* get data for this id: */
+    var data_id = data_ids[i];
+    var id_data = data['data'][data_id];
+    /* get x values: */
+    var x = id_data['times'];
+    if (x[0] == '') {
+      var x = id_data['start_dates'];
+    };
+    var y = id_data['temperatures'];
+    /* temperature plot: */
+    var scatter_temperature = {
+      'name': data_id,
+      'type': 'scatter',
+      'x': x,
+      'y': y
+    };
+    /* plot data, in order of plotting: */
+    scatter_data.push(scatter_temperature);
+  };
+  /* scatter plot layout: */
+  var scatter_layout = {
+    'xaxis': {
+      'type': 'date',
+      'hoverformat': '%Y-%m-%d'
+    }
+  };
+  /* scatter plot config: */
+  var scatter_conf = {
+    'showLink': false,
+    'linkText': '',
+    'displaylogo': false,
+    'modeBarButtonsToRemove': [
+      'autoScale2d',
+      'lasso2d',
+      'hoverClosestCartesian',
+      'hoverCompareCartesian',
+      'toggleSpikelines'
+    ],
+    'responsive': true
+  };
+  /* create the scatter plot: */
+  var scatter_plot = Plotly.newPlot(
+    temperature_plot_div, scatter_data, scatter_layout, scatter_conf
+  );
+};
+
+/* function to load area data: */
+async function load_area_data() {
+  /* get data: */
+  await fetch(
+    data_area,
+    {'cache': 'no-cache'}
+  ).then(async function(data_req) {
+    page_data['area'] = await data_req.json();
+  });
+  /* get data: */
+  var data = page_data['area'];
+  /* draw the area plot: */
+  area_plot(data);
+};
+
+/* function to draw area plot: */
+function area_plot(data) {
+  /* x values are years: */
+  var x = data['years'];
+  /* init y values: */
+  var y = [];
+  /* loop through years: */
+  for (var i = 0; i < x.length; i++) {
+    /* get data for this year: */
+    var data_year = x[i];
+    y.push(data['data'][data_year]['AREA']);
+  };
+  /* area plot: */
+  var scatter_area = {
+    'type': 'scatter',
+    'mode': 'lines+markers',
+    'x': x,
+    'y': y
+  };
+  var scatter_data = [scatter_area];
+  /* scatter plot layout: */
+  var scatter_layout = {
+    'xaxis': {
+      'type': 'date',
+      'hoverformat': '%Y'
+    }
+  };
+  /* scatter plot config: */
+  var scatter_conf = {
+    'showLink': false,
+    'linkText': '',
+    'displaylogo': false,
+    'modeBarButtonsToRemove': [
+      'autoScale2d',
+      'lasso2d',
+      'hoverClosestCartesian',
+      'hoverCompareCartesian',
+      'toggleSpikelines'
+    ],
+    'responsive': true
+  };
+  /* create the scatter plot: */
+  var scatter_plot = Plotly.newPlot(
+    area_plot_div, scatter_data, scatter_layout, scatter_conf
+  );
+};
+
+/* function to load volume data: */
+async function load_volume_data() {
+  /* get data: */
+  await fetch(
+    data_volume,
+    {'cache': 'no-cache'}
+  ).then(async function(data_req) {
+    page_data['volume'] = await data_req.json();
+  });
+  /* get data: */
+  var data = page_data['volume'];
+  /* draw the volume plot: */
+  volume_plot(data);
+};
+
+/* function to draw volume plot: */
+function volume_plot(data) {
+  /* x values are years: */
+  var x = data['years'];
+  /* init y values: */
+  var y = [];
+  /* init hover text values: */
+  var hover_text = [];
+  /* loop through years: */
+  for (var i = 0; i < x.length; i++) {
+    /* get data for this year: */
+    var data_year = x[i];
+    y.push(data['data'][data_year]['VOLUME']);
+    /* store hover text: */
+    hover_text[i] = '<b>volume:</b> ' + data['data'][data_year]['VOLUME'] + '<br>' +
+                    '<b>method:</b> ' + data['data'][data_year]['METHOD'] + '<br>' +
+                    '<b>data source:</b> ' + data['data'][data_year]['DATA_SOURCE'] + '<br>' +
+                    '<b>doi:</b> ' + data['data'][data_year]['DOI'];
+  };
+  /* volume plot: */
+  var scatter_volume = {
+    'type': 'scatter',
+    'mode': 'lines+markers',
+    'x': x,
+    'y': y,
+    'hoverinfo': 'text',
+    'hovertext': hover_text
+  };
+  var scatter_data = [scatter_volume];
+  /* scatter plot layout: */
+  var scatter_layout = {};
+  /* scatter plot config: */
+  var scatter_conf = {
+    'showLink': false,
+    'linkText': '',
+    'displaylogo': false,
+    'modeBarButtonsToRemove': [
+      'autoScale2d',
+      'lasso2d',
+      'hoverClosestCartesian',
+      'hoverCompareCartesian',
+      'toggleSpikelines'
+    ],
+    'responsive': true
+  };
+  /* create the scatter plot: */
+  var scatter_plot = Plotly.newPlot(
+    volume_plot_div, scatter_data, scatter_layout, scatter_conf
+  );
+};
+
+/* function to load depth data: */
+async function load_depth_data() {
+  /* get data: */
+  await fetch(
+    data_depth,
+    {'cache': 'no-cache'}
+  ).then(async function(data_req) {
+    page_data['depth'] = await data_req.json();
+  });
+  /* get data for first data id: */
+  var data_id = page_data['depth']['data_ids'][0];
+  var data = page_data['depth']['data'][data_id];
+  /* get x, y, and z data: */
+  var x = data['grid_lon'];
+  var y = data['grid_lat'];
+  var z = data['grid_depth'];
+  /* draw the depth plot: */
+  depth_plot(x, y, z);
+};
+
+/* function to draw depth plot: */
+function depth_plot(x, y, z) {
+  /* 3d depth plot: */
+  var surface_depth = {
+    'type': 'surface',
+    'x': x,
+    'y': y,
+    'z': z,
+    'surfacecolor': 'Blues',
+    'colorscale': 'Blues'
+  };
+  /* plot data, in order of plotting: */
+  var surf_data = [surface_depth];
+  /* surface plot layout: */
+  var surf_layout = {};
+  /* surface plot config: */
+  var surf_conf = {
+    'showLink': false,
+    'linkText': '',
+    'displaylogo': false,
+    'modeBarButtonsToRemove': [
+      'autoScale2d',
+      'lasso2d',
+      'hoverClosestCartesian',
+      'hoverCompareCartesian',
+      'toggleSpikelines'
+    ],
+    'responsive': true
+  };
+  /* create the surf plot: */
+  var surf_plot = Plotly.newPlot(
+    depth_plot_div, surf_data, surf_layout, surf_conf
+  );
 };
 
 /* set up the page: */
 function load_page() {
-  load_data();
+  load_lake_data();
+  load_geometry_data();
+  load_temperature_data();
+  load_area_data();
+  load_volume_data();
+  load_depth_data();
 }
 
 /** add listeners: **/
