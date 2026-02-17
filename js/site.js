@@ -115,12 +115,12 @@ function load_text() {
   var info_el = document.getElementById('header_text');
   var info_text = '';
   var info_keys = [
-    'GLO_ID', 'COUNTRY', 'BASIN', 'CONNECTIVITY', 'DATA_SOURCE', 'START_DATE',
-    'END_DATE', 'LONGITUDE', 'LATITUDE'
-  ]; 
+    'GLO_ID', 'COUNTRY', 'BASIN', 'CONNECTIVITY', 'LONGITUDE', 'LATITUDE'
+  ];
   for (var i = 0; i < info_keys.length; i++) {
     var info_key = info_keys[i];
-    info_text += '<p>' + info_keys[i].toLowerCase() + ': ' + page_data['lake'][info_key] + '</p>';
+    info_text += '<p>' + info_keys[i].toLowerCase() + ': ' +
+                 page_data['lake'][info_key] + '</p>';
   };
   info_el.innerHTML = info_text;
 };
@@ -274,6 +274,7 @@ function temperature_plot(data) {
     var scatter_temperature = {
       'name': data_id,
       'type': 'scatter',
+      'mode': 'markers',
       'x': x,
       'y': y
     };
@@ -324,24 +325,28 @@ async function load_area_data() {
 
 /* function to draw area plot: */
 function area_plot(data) {
-  /* x values are years: */
-  var x = data['years'];
-  /* init y values: */
-  var y = [];
-  /* loop through years: */
-  for (var i = 0; i < x.length; i++) {
-    /* get data for this year: */
-    var data_year = x[i];
-    y.push(data['data'][data_year]['AREA']);
+  /* init scatter plot data: */
+  var scatter_data = [];
+  /* loop through data ids: */
+  var data_ids = data['data_ids'];
+  for (var i = 0; i < data_ids.length; i++) {
+    /* get data for this id: */
+    var data_id = data_ids[i];
+    var id_data = data['data'][data_id];
+    /* get x values: */
+    var x = id_data['area_years'];
+    var y = id_data['areas'];
+    /* area plot: */
+    var scatter_area = {
+      'name': data_id,
+      'type': 'scatter',
+      'mode': 'lines+markers',
+      'x': x,
+      'y': y
+    };
+    /* plot data, in order of plotting: */
+    scatter_data.push(scatter_area);
   };
-  /* area plot: */
-  var scatter_area = {
-    'type': 'scatter',
-    'mode': 'lines+markers',
-    'x': x,
-    'y': y
-  };
-  var scatter_data = [scatter_area];
   /* scatter plot layout: */
   var scatter_layout = {
     'xaxis': {
