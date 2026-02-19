@@ -30,7 +30,27 @@ var page_data = {
   /* volume data: */
   'volume': null,
   /* depth data: */
-  'depth': null
+  'depth': null,
+  /* geometry color map (R viridis mako): */
+  'geometry_colors': [
+    "#def5e5ff", "#d9f2e0ff", "#d4f1dcff", "#cfeed7ff", "#c9edd3ff", "#c4eacfff",
+    "#bfe9cbff", "#b9e6c7ff", "#b3e4c3ff", "#ade3c0ff", "#a7e1bcff", "#a0dfb9ff",
+    "#99ddb6ff", "#93dbb5ff", "#8bdab2ff", "#83d8b0ff", "#7bd6afff", "#74d4adff",
+    "#6cd3adff", "#65d0adff", "#5fcdadff", "#59ccadff", "#54c9adff", "#50c6adff",
+    "#4cc3adff", "#48c1adff", "#46beadff", "#43bbadff", "#41b8adff", "#3fb5adff",
+    "#3db3adff", "#3bafadff", "#3aadacff", "#38aaacff", "#37a7acff", "#36a4abff",
+    "#35a1abff", "#359fabff", "#359baaff", "#3499aaff", "#3496a9ff", "#3492a8ff",
+    "#3490a8ff", "#348da7ff", "#348aa6ff", "#3487a6ff", "#3485a5ff", "#3482a4ff",
+    "#357ea4ff", "#357ca3ff", "#3579a2ff", "#3576a2ff", "#3573a1ff", "#3670a0ff",
+    "#366da0ff", "#366a9fff", "#37689fff", "#37649eff", "#38629dff", "#395e9cff",
+    "#3a5c9bff", "#3b589aff", "#3c5598ff", "#3d5296ff", "#3e4f94ff", "#3f4c91ff",
+    "#40498eff", "#40478aff", "#414387ff", "#414083ff", "#413e7eff", "#403c79ff",
+    "#403a75ff", "#3f3770ff", "#3e356cff", "#3e3367ff", "#3c3162ff", "#3b2f5eff",
+    "#3a2c59ff", "#382a55ff", "#372851ff", "#35264cff", "#342548ff", "#322243ff",
+    "#31213fff", "#2e1e3bff", "#2c1c37ff", "#2a1b33ff", "#28192fff", "#26172aff",
+    "#231526ff", "#211423ff", "#1e111fff", "#1b0f1bff", "#190e18ff", "#160b14ff",
+    "#140910ff", "#11070cff", "#0f0609ff", "#0b0405ff"
+  ]
 };
 var plot_div = document.getElementById('plot_div');
 
@@ -188,15 +208,31 @@ function geometry_plot(data) {
   var max_lat = -90;
   var min_lon = 180;
   var max_lon = -180;
-  /* loop through yars and load polygones: */
-  for (var i = 0; i < data['years'].length; i++) {
+  /* get geometry color map: */
+  var geometry_colors = page_data['geometry_colors'];
+  var color_count = geometry_colors.length;
+  /* loop through yars and load polygons: */
+  for (var i = (data['years'].length -1); i > -1; i--) {
+    /* get color for this polygon: */
+    if (data['years'].length == 1) {
+      var poly_color_index = Math.round(
+        0.5 * (color_count - 1)
+      );
+    } else {
+      var poly_color_index = Math.round(
+        (i / (data['years'].length - 1)) * (color_count - 1)
+      );
+    }
+    var poly_color = geometry_colors[poly_color_index];
+    /* add polygon: */
     var poly_year = parseInt(data['years'][i]) + '.0';
     var poly_layer = L.geoJSON(
       data['data'][poly_year],
-      {style: function () { return {color: '#6666cc'}; }}
+      {style: function () { return {color: poly_color}; }}
     );
     poly_layer.bindTooltip('' + parseInt(data['years'][i]) + '');
-    poly_layers[parseInt(data['years'][i])] = poly_layer;
+    var poly_key = ' ' + parseInt(data['years'][i]);
+    poly_layers[poly_key] = poly_layer;
     var poly_bounds = poly_layer.getBounds();
     min_lat = Math.min(min_lat, poly_bounds.getSouth())
     max_lat = Math.max(max_lat, poly_bounds.getNorth())
@@ -236,7 +272,9 @@ function geometry_plot(data) {
   /* add scale: */
   L.control.scale().addTo(map);
   /* add layer control: */
-  L.control.layers(tile_layers, poly_layers, {collapsed: true}).addTo(map);
+  L.control.layers(
+    tile_layers, poly_layers, {collapsed: true, sortLayers: false}
+  ).addTo(map);
 };
 
 /* function to load temperature data: */
