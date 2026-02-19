@@ -256,7 +256,7 @@ function geometry_plot(data) {
     /* define bounds: */
     maxBounds: [
       [min_lat - 0.1, max_lat + 0.1],
-      [min_lon -0.1, max_lon + 0.1],
+      [min_lon - 0.1, max_lon + 0.1],
     ],
     maxBoundsViscosity: 1.0,
     /*  zoom levels: */
@@ -322,8 +322,12 @@ function temperature_plot(data) {
   /* scatter plot layout: */
   var scatter_layout = {
     'xaxis': {
+      'title': 'Date',
       'type': 'date',
       'hoverformat': '%Y-%m-%d'
+    },
+    'yaxis': {
+      'title': 'Temperature (°C)'
     }
   };
   /* scatter plot config: */
@@ -388,8 +392,12 @@ function area_plot(data) {
   /* scatter plot layout: */
   var scatter_layout = {
     'xaxis': {
+      'title': 'Date',
       'type': 'date',
       'hoverformat': '%Y'
+    },
+    'yaxis': {
+      'title': 'Area (km²)'
     }
   };
   /* scatter plot config: */
@@ -457,7 +465,16 @@ function volume_plot(data) {
   };
   var scatter_data = [scatter_volume];
   /* scatter plot layout: */
-  var scatter_layout = {};
+  var scatter_layout = {
+    'xaxis': {
+      'title': 'Date',
+      'type': 'date',
+      'hoverformat': '%Y'
+    },
+    'yaxis': {
+      'title': 'Volume (m³)'
+    }
+  };
   /* scatter plot config: */
   var scatter_conf = {
     'showLink': false,
